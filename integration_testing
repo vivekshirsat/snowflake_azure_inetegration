@@ -1,0 +1,85 @@
+//creating data warehouse 
+
+create or replace warehouse azure_wh
+with
+warehouse_size = 'xsmall'
+min_cluster_count = 1
+max_cluster_count = 1
+auto_suspend = 120
+auto_resume = true
+initially_suspended = true
+warehouse_type = standard
+scaling_policy = standard;
+
+
+//creating database and schema to store data
+create or replace database azure_db;
+create or replace schema azure_datalake;
+
+
+//creating file format for the csv 
+create or replace schema file_formats;
+create or replace file format azure_db.file_formats.csv_file
+type = csv
+field_delimiter = ','
+FIELD_OPTIONALLY_ENCLOSED_BY='"'
+null_if = ('NULL','null')
+empty_field_as_null = true
+skip_header = 1;
+
+//creating storage integration 
+create or replace schema storage_integration;
+create storage integration azure_integration
+type = external_stage
+storage_provider = azure  
+enabled = true
+azure_tenant_id = '44ac231c-3f88-4afc-b41e-282f4247f2ed'
+storage_allowed_locations = ('azure://snowflakestorage254.blob.core.windows.net/snowflakedata');
+
+
+//describing integration
+desc integration azure_integration;
+
+//now creating stage and setting up integration 
+create or replace stage azure_stage
+storage_integration = azure_integration
+url = 'azure://snowflakestorage254.blob.core.windows.net/snowflakedata'
+file_format = azure_db.file_formats.csv_file;
+
+
+list @azure_stage;
+
+//now describe table  
+select $1,
+$2,
+$3,
+$4,
+$5,
+$6,
+$7,
+$8
+from @azure_db.storage_integration.azure_stage;
+
+
+//create table and copy data from the stage 
+create or replace table azure_db.azure_datalake.airbnb_data
+(roomtype varchar,
+stars number(2,1),
+address varchar,
+number_of_guest varchar,
+primary_host varchar,
+price int,
+first_review_comments varchar,
+first_review_rating float
+);
+
+select * from azure_db.azure_datalake.airbnb_data;
+
+copy into azure_db.azure_datalake.airbnb_data
+from @azure_db.storage_integration.azure_stage;
+
+select * from azure_db.azure_datalake.airbnb_data;
+
+drop table azure_db.azure_datalake.airbnb_data;
+
+
