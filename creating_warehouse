@@ -1,0 +1,23 @@
+//creating data warehouse 
+
+create or replace warehouse azure_wh
+with
+warehouse_size = 'xsmall'
+min_cluster_count = 1
+max_cluster_count = 1
+auto_suspend = 300
+auto_resume = true
+initially_suspended = true
+warehouse_type = standard
+scaling_policy = standard;
+
+
+
+//creating database and schema to store data
+create or replace database azure_db;
+
+create or replace schema azure_datalake;
+
+
+
+
